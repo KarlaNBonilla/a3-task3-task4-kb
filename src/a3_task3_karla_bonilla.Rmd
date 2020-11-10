@@ -1,0 +1,93 @@
+---
+title: "A3_T3"
+author: "Karla Bonilla"
+date: "11/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library}
+library(tidyverse)
+library(here)
+library(readr)
+library(janitor)
+library(kableExtra)
+library(lubridate)
+```
+
+```{r data}
+urchins <- read_csv(here("urchins.csv"))
+urchins_clean <- clean_names(urchins)
+```
+
+```{r}
+# Section 1: Size comparisons, purple and red urchins
+##**1A. Exploratory data visualization:** comparing the distribution of sizes between purple and red urchins using graphs
+
+urchins_clean %>% ggplot(aes(x = size, fill = common_name)) +
+  geom_histogram(color = "black") +
+  facet_wrap(~common_name) +
+  scale_fill_manual(values = c("purple", "red")) + 
+  theme(legend.position = "none") +
+  xlab("urchin Diameter (cm)")
+
+ggplot(data = urchins_clean, aes(x = common_name, y = size)) + 
+  geom_boxplot() + 
+  labs(x = "Common Name", 
+       y = "Diameter (cm)", 
+       title = "Size Comparison of Urchins")
+```
+
+```{r}
+##**1B. Descriptive statistics table:** Creating a summary table that contains the following statistics for purple and red urchins: mean, median, standard deviation, and sample size.
+
+urchins_summary <- urchins_clean %>%
+  group_by(common_name) %>%
+  summarize(mean = mean(size), median = median(size), sd = sd(size), n = n()) 
+  kbl(urchins_summary) %>%
+  kable_styling()
+  
+  ### Takeaway: Purple urchins have a lower mean, meaning that they are smaller on average when compared to Red urchins. Purple urchins also have a lower standard deviation meaning that their size won't vary much from the average when compared to Red urchins who have a greater standard deviation. 
+```
+
+```{r}
+# Section 2: Exploring purple urchin count by size and year
+## 2.A
+
+purple_urchins <- urchins_clean %>% filter(common_name == "Purple Urchin") %>%
+  mutate(date = mdy(date)) %>%
+  separate(col = date,
+           into = c("year","month_day"),
+           sep = "-",
+           extra = "merge",
+           remove = FALSE) %>%
+  mutate(site = case_when(
+    site == "NAPL" ~ "Naples Reef", 
+    site == "AQUE" ~ "Arroyo Quemado Reef",
+    site == "CARP" ~ "Carpinteria Reef",
+    site == "MOHK" ~ "Mohawk Reef",
+    site == "IVEE" ~ "Isla Vista Reef"))
+
+
+## 2.B Summary Table
+
+purple_summary <- purple_urchins %>% 
+  group_by(site, year) %>%
+  count(site, year)
+
+## Histogram
+ ggplot(data = purple_summary, aes(x = year, y = n, fill = site)) +
+  geom_col() +
+  facet_wrap(~site) +
+   scale_x_discrete(breaks = c("2008", "2012", "2016", "2020"),
+                    labels = c("2008", "2012", "2016", "2020")) +
+   labs( x = "Year",
+         y = "Count",
+         title = "Urchin Count by Site") +
+   theme(legend.position = "none")
+ 
+```
+
